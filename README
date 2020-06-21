@@ -1,0 +1,21 @@
+Automatic brightness control daemon readme.
+
+BUIDING
+#cd ./autobright/
+#go build
+
+USAGE
+This daemon gets current environment light level via MQTT, calculates required monitor brightness, and write calculated brithness to current brightness level in your /sys/class/brightness/...
+
+To make it works, you'll need MQTT light level sensor. 
+
+Please adjust values at begining of main.go according to your system. You'll need to set this things:
+- Path for brightness control file in your system,
+- light_lvl_min,light_lvl_max - signal levels from your sensor in a dark room and at sunny day conditions,
+- brightness_min,brightness_max - desirable minumum and maximum brightness to be set. 
+
+To run, just execute autobright binary:
+
+#./autobright
+
+In case if there will be erros writing in brightness control file, please do "chmod 777" or that file, or run the utility from root user.

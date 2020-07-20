@@ -15,12 +15,14 @@ var light_lvl_topic="ESP32_RoomSensor1_light_level" //Topic where light level ca
 var light_lvl float64
 var light_lvl_min=10.0  //Minimum light level fron your sensor (dark time value)
 var light_lvl_max=500.0 //Maximum light level from your light sensor (bright sunny day value)
-var brightness_ctl="/sys/class/backlight/radeon_bl1/brightness" //Path to brightness control file in your system
-var brightness_min=60.0 //Low margin for calculated brightness
-var brightness_max=150.0 //High margin for calculated brightness
+var brightness_ctl="/sys/class/backlight/intel_backlight/brightness" //Path to brightness control file in your system
+var brightness_min=300000.0 //Low margin for calculated brightness
+var brightness_max=13267905.0 //High margin for calculated brightness
 
-var clientId="watcher_sub" //Client ID for MQTT. 
+var clientId="watcher_sub_sony" //Client ID for MQTT. 
 var mqttUrl="tcp://192.168.0.2:14419" //URL of MQTT server
+
+
 
 func connect(clientId string, uri *url.URL) mqtt.Client {
 	opts := createClientOptions(clientId, uri)
@@ -34,6 +36,12 @@ func connect(clientId string, uri *url.URL) mqtt.Client {
 	return client
 }
 
+func connLostHandler(c mqtt.Client, err error) {
+    fmt.Printf("Connection lost, reason: %v\n", err)
+    c.Disconnect(0)
+    //Perform additional action...
+}
+
 func createClientOptions(clientId string, uri *url.URL) *mqtt.ClientOptions {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s", uri.Host))
@@ -41,18 +49,36 @@ func createClientOptions(clientId string, uri *url.URL) *mqtt.ClientOptions {
 	password, _ := uri.User.Password()
 	opts.SetPassword(password)
 	opts.SetClientID(clientId)
-	opts.SetAutoReconnect(true)
+	//opts.SetAutoReconnect(true)
+	opts.SetConnectionLostHandler(connLostHandler)
+	//opts.SetConnectionLostHandler(func(){fmt.Printf("Connection break detected!!!")})
+
 	return opts
 }
 
 
 func watch_light_lvl(){
-	client := connect(clientId, mqtt_url)
-	client.Subscribe(light_lvl_topic, 0, func(client mqtt.Client, msg mqtt.Message) {
-		message:=string(msg.Payload())
-		log.Printf("Got msg: %s",message)
-		light_lvl,_=strconv.ParseFloat(message,32)
-	})
+	var cnt=0;
+	for {
+		client := connect(clientId, mqtt_url)
+		client.Subscribe(light_lvl_topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+			message:=string(msg.Payload())
+			log.Printf("Got msg: %s",message)
+			light_lvl,_=strconv.ParseFloat(message,32)
+		})
+		for {
+			time.Sleep(5*time.Second)
+			//fmt.Printf("Client state is: %v \n", client.IsConnected())
+			if(client.IsConnected()!=true){
+				cnt++
+			}
+			if(cnt>3){
+				cnt=0;
+				fmt.Printf("Looks like connecton is lost. Reconnecting...")
+				break;
+			}
+		}
+	}
 }
 
 func main(){

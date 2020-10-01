@@ -74,7 +74,7 @@ func watch_light_lvl(){
 			}
 			if(cnt>3){
 				cnt=0;
-				fmt.Printf("Looks like connecton is lost. Reconnecting...")
+				fmt.Printf("Looks like connecton is lost:( Reconnecting...")
 				break;
 			}
 		}
@@ -103,7 +103,7 @@ func main(){
 		//Set brightness
 		err := ioutil.WriteFile(brightness_ctl, []byte(strconv.Itoa(int(br_sp))), 0644)
 		if (err!=nil){
-			fmt.Printf("Error writing to file! %v",err)
+			fmt.Printf("Error writing to file :( %v",err)
 		}
 	}
 }
